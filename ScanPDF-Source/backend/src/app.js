@@ -35,12 +35,20 @@ async function countPages(bytes) {
   }
 }
 
+function validNewPassword(password) {
+  return typeof password === 'string' && password.length >= 8 && password.length <= 128 &&
+    /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[^a-zA-Z0-9\s]/.test(password);
+}
+
 function credentials(body, register) {
   const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
   const password = body?.password;
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
       typeof password !== 'string' || password.length < (register ? 8 : 1) || password.length > 128) {
     throw invalid('Kiểm tra email và mật khẩu.');
+  }
+  if (register && !validNewPassword(password)) {
+    throw invalid('Mật khẩu cần chữ hoa, chữ thường, số và ký tự đặc biệt.');
   }
   return {email, password};
 }
@@ -100,6 +108,9 @@ export function createApp({auth, documents}, {maxHeavy = Number(process.env.MAX_
     next();
   }
   app.get('/health', (_req, res) => res.json({status: 'ok'}));
+  app.get('/auth/confirmed', (_req, res) => res.type('text/plain').send(
+    'Quay lại ScanPDF và đăng nhập. Nếu email chưa được xác nhận, hãy dùng liên kết mới nhất trong hộp thư.',
+  ));
   app.post('/v1/auth/register', authLimit, async (req, res) => {
     const {email, password} = credentials(req.body, true);
     await auth.register(email, password);
@@ -115,6 +126,15 @@ export function createApp({auth, documents}, {maxHeavy = Number(process.env.MAX_
     res.json(await auth.refresh(token));
   });
   app.get('/v1/auth/me', session, apiLimit, (req, res) => res.json({user: req.user}));
+  app.post('/v1/auth/password', authLimit, session, async (req, res) => {
+    const {current_password: current, new_password: password} = req.body ?? {};
+    if (typeof current !== 'string' || !current.length || current.length > 128 ||
+        !validNewPassword(password) || current === password) {
+      throw invalid('Nhập mật khẩu hiện tại và một mật khẩu mới hợp lệ, khác mật khẩu cũ.');
+    }
+    await auth.changePassword(req.token, req.user, current, password);
+    res.status(204).end();
+  });
   app.post('/v1/auth/logout', session, async (req, res) => {
     await auth.logout(req.token);
     res.status(204).end();

@@ -16,6 +16,9 @@ async function fixture(t, {maxHeavy, quota = Infinity} = {}) {
   const lookup = (owner, id) => [...rows.values()].find(r => r.id === id && r.owner_id === owner);
   const auth = {
     async register() {},
+    async changePassword(token, user, current, password) {
+      state.passwordChange = {token, user, current, password};
+    },
     async login(email, password) {
       if (email !== a.email || password !== 'Example123') throw unauthorized();
       return {user: a, access_token: 'alice', refresh_token: 'refresh', expires_at: 100};
@@ -209,7 +212,8 @@ test('delete is owner-only and retries after Storage removal', async t => {
 
 test('auth validates inputs, refreshes, rejects revoked tokens and reports unavailable dependencies', async t => {
   const {a, post, request, state, upload} = await fixture(t);
-  assert.equal((await post('/auth/register', {email: 'A@example.com', password: 'Example123'})).status, 202);
+  assert.equal((await post('/auth/register', {email: 'A@example.com', password: 'Example123!'})).status, 202);
+  assert.equal((await post('/auth/register', {email: 'A@example.com', password: 'Example123'})).status, 400);
   assert.equal((await post('/auth/register', {email: 'A@example.com', password: 'short'})).status, 400);
   assert.equal((await post('/auth/login', {email: a.email, password: 'wrong'})).status, 401);
   const login = await post('/auth/login', {email: a.email, password: 'Example123'});
@@ -226,6 +230,17 @@ test('auth validates inputs, refreshes, rejects revoked tokens and reports unava
   assert.equal((await upload('alice', randomUUID())).status, 401);
   assert.equal((await request('/documents/' + randomUUID() + '/content', 'alice')).status, 401);
   assert.equal((await request('/auth/me', 'alice2')).status, 200);
+});
+
+test('password change requires a session and validates both passwords', async t => {
+  const {a, post, state} = await fixture(t);
+  const data = {current_password: 'Example123', new_password: 'NewExample123!'};
+  assert.equal((await post('/auth/password', data)).status, 401);
+  assert.equal((await post('/auth/password', {...data, new_password: 'weak'}, 'alice')).status, 400);
+  assert.equal((await post('/auth/password', {...data, current_password: data.new_password}, 'alice')).status, 400);
+  assert.equal(state.passwordChange, undefined);
+  assert.equal((await post('/auth/password', data, 'alice')).status, 204);
+  assert.deepEqual(state.passwordChange, {token: 'alice', user: a, current: data.current_password, password: data.new_password});
 });
 
 test('a PDF belongs only to its owner and downloads with the original bytes', async t => {

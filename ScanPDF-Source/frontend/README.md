@@ -29,7 +29,7 @@ Lệnh phải xác minh thành công và thông tin chứng thư không được
 ## Luồng quét và chế độ mẫu
 
 - Quét hoặc nhập tối đa 50 trang, chỉnh phối cảnh, xoay, bộ lọc, độ sáng, tương phản và thứ tự. PDF có thể xuất theo A4, Letter hoặc tỷ lệ ảnh.
-- Có thể dùng tài khoản mẫu, tài liệu mẫu và bộ 19 màn hình tham chiếu bằng `--dart-define=DESIGN_PREVIEW=true`. Màn hình OCR và đổi mật khẩu hiện là giao diện minh họa.
+- Có thể dùng tài khoản mẫu, tài liệu mẫu và bộ 19 màn hình tham chiếu bằng `--dart-define=DESIGN_PREVIEW=true`. Trên Android đã kết nối API, vào **Tài khoản → Đổi mật khẩu** để cập nhật mật khẩu. OCR và khôi phục mật khẩu qua email chưa được triển khai.
 - Xem [đối chiếu các khung Stitch](STITCH-REVIEW.md) để kiểm tra phạm vi từng màn hình.
 
 ## Kiểm tra

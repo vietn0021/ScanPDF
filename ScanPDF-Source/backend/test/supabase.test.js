@@ -143,6 +143,18 @@ test('Supabase development project: atomic quota and idempotency at capacity', {
       const conflict = await upload(keys[winner], differentBytes);
       assert.equal(conflict.status, 409);
       assert.equal((await conflict.json()).error.code, 'UPLOAD_KEY_CONFLICT');
+      if (round === 0) {
+        const newPassword = 'New!' + randomUUID();
+        const change = current => fetch(new URL('/v1/auth/password', endpoint), {
+          method: 'POST', headers: {Authorization: 'Bearer ' + access_token, 'Content-Type': 'application/json'},
+          body: JSON.stringify({current_password: current, new_password: newPassword}),
+        });
+        assert.equal((await change('Wrong!' + randomUUID())).status, 400);
+        const changed = await change(password);
+        assert.equal(changed.status, 204, await changed.clone().text());
+        await assert.rejects(services.auth.login(email, password), {status: 401});
+        assert.equal((await services.auth.login(email, newPassword)).user.id, owner);
+      }
     } finally {
       const listed = await admin.storage.from(bucket).list(owner);
       assert.ifError(listed.error);

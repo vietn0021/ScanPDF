@@ -543,9 +543,14 @@ class AccountView extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.lock_outline),
                 title: const Text('Đổi mật khẩu'),
-                subtitle: const Text('Biểu mẫu dùng thử'),
+                subtitle: Text(
+                  session == null
+                      ? 'Biểu mẫu dùng thử'
+                      : 'Cập nhật mật khẩu tài khoản ScanPDF',
+                ),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => screen<void>(context, const PasswordScreen()),
+                onTap: () =>
+                    screen<void>(context, PasswordScreen(session: session)),
               ),
               const Divider(height: 1),
               ListTile(
@@ -817,7 +822,8 @@ class _ProfileEditorState extends State<ProfileEditor> {
 }
 
 class PasswordScreen extends StatefulWidget {
-  const PasswordScreen({super.key});
+  const PasswordScreen({super.key, this.session});
+  final OnlineSession? session;
   @override
   State<PasswordScreen> createState() => _PasswordScreenState();
 }
@@ -827,7 +833,39 @@ class _PasswordScreenState extends State<PasswordScreen> {
   final current = TextEditingController(),
       password = TextEditingController(),
       confirm = TextEditingController();
-  bool show = false, otherDevices = true;
+  bool show = false, busy = false;
+  String? error;
+
+  Future<void> submit() async {
+    if (busy || !form.currentState!.validate()) return;
+    final session = widget.session;
+    if (session == null) {
+      notice(context, 'Biểu mẫu hợp lệ. Mật khẩu chưa được cập nhật.');
+      return;
+    }
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      await session.changePassword(current.text, password.text);
+      if (!mounted) return;
+      current.clear();
+      password.clear();
+      confirm.clear();
+      notice(context, 'Đã đổi mật khẩu.');
+      Navigator.of(context).pop();
+    } on ApiFailure catch (failure) {
+      if (mounted) setState(() => error = failure.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => error = 'Không thể xác nhận kết quả đổi mật khẩu.');
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   @override
   void dispose() {
     current.dispose();
@@ -846,34 +884,37 @@ class _PasswordScreenState extends State<PasswordScreen> {
         children: [
           const SectionTitle('Bảo vệ tài khoản'),
           const SizedBox(height: 12),
-          const InfoStrip(
-            icon: Icons.info_outline,
-            text:
-                'Biểu mẫu dùng thử. Chưa kết nối dịch vụ để cập nhật mật khẩu.',
-          ),
+          if (widget.session == null)
+            const InfoStrip(
+              icon: Icons.info_outline,
+              text: 'Biểu mẫu dùng thử.',
+            ),
+          if (error case final message?)
+            InfoStrip(icon: Icons.error_outline, text: message),
           const SizedBox(height: 18),
           TextFormField(
             controller: current,
+            enabled: !busy,
             obscureText: !show,
-            decoration: const InputDecoration(
-              labelText: 'Mật khẩu hiện tại (mẫu)',
-            ),
+            decoration: const InputDecoration(labelText: 'Mật khẩu hiện tại'),
             validator: (value) =>
-                (value?.isEmpty ?? true) ? 'Nhập mật khẩu mẫu hiện tại' : null,
+                (value?.isEmpty ?? true) ? 'Nhập mật khẩu hiện tại' : null,
           ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () => previewFeature(
-                context,
-                'Quên mật khẩu?',
-                'Gửi liên kết qua email chưa được kết nối.',
+          if (widget.session == null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => previewFeature(
+                  context,
+                  'Quên mật khẩu?',
+                  'Gửi liên kết qua email chưa được kết nối.',
+                ),
+                child: const Text('Quên mật khẩu?'),
               ),
-              child: const Text('Quên mật khẩu?'),
             ),
-          ),
           TextFormField(
             controller: password,
+            enabled: !busy,
             onChanged: (_) => setState(() {}),
             obscureText: !show,
             decoration: InputDecoration(
@@ -887,8 +928,9 @@ class _PasswordScreenState extends State<PasswordScreen> {
               ),
             ),
             validator: (v) {
-              if (!passwordChecks(v ?? '').every((check) => check)) {
-                return 'Mật khẩu mẫu chưa đủ yêu cầu';
+              if (!passwordChecks(v ?? '').every((check) => check) ||
+                  (v?.length ?? 0) > 128) {
+                return 'Mật khẩu chưa đủ yêu cầu hoặc dài quá 128 ký tự';
               }
               return v == current.text
                   ? 'Mật khẩu mới phải khác mật khẩu hiện tại'
@@ -900,30 +942,24 @@ class _PasswordScreenState extends State<PasswordScreen> {
           const SizedBox(height: 12),
           TextFormField(
             controller: confirm,
+            enabled: !busy,
             obscureText: !show,
             decoration: const InputDecoration(labelText: 'Xác nhận mật khẩu'),
             validator: (v) => v == password.text ? null : 'Mật khẩu không khớp',
-          ),
-          const SizedBox(height: 12),
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            controlAffinity: ListTileControlAffinity.leading,
-            title: const Text('Đăng xuất khỏi các thiết bị khác'),
-            subtitle: const Text('Tùy chọn minh họa'),
-            value: otherDevices,
-            onChanged: (value) => setState(() => otherDevices = value ?? false),
           ),
         ],
       ),
     ),
     bottomNavigationBar: CommandBar(
       child: FilledButton(
-        onPressed: () {
-          if (form.currentState!.validate()) {
-            notice(context, 'Biểu mẫu hợp lệ. Mật khẩu chưa được cập nhật.');
-          }
-        },
-        child: const Text('Kiểm tra biểu mẫu'),
+        onPressed: busy ? null : submit,
+        child: Text(
+          busy
+              ? 'Đang lưu…'
+              : widget.session == null
+              ? 'Kiểm tra biểu mẫu'
+              : 'Đổi mật khẩu',
+        ),
       ),
     ),
   );

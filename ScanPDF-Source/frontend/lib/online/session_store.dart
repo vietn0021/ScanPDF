@@ -51,6 +51,17 @@ class OnlineSession {
     );
   }
 
+  Future<void> changePassword(String current, String password) async {
+    await authorized(
+      (token) => api.json(
+        'POST',
+        'auth/password',
+        token: token,
+        body: {'current_password': current, 'new_password': password},
+      ),
+    );
+  }
+
   Future<void> login(
     String email,
     String password, {

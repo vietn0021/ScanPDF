@@ -11,8 +11,12 @@ function requireData({data, error}) {
 }
 function authResult({data, error}) {
   if (error) {
+    if (error.code === 'email_not_confirmed') {
+      throw new ApiError(403, 'EMAIL_NOT_CONFIRMED', 'Hãy xác nhận email trước khi đăng nhập.');
+    }
     if (['AuthInvalidJwtError', 'AuthSessionMissingError'].includes(error.name)) throw unauthorized();
-    if (!error.status || error.status >= 500 || error.status === 429) throw unavailable();
+    if (error.status === 429) throw new ApiError(429, 'RATE_LIMITED', 'Quá nhiều yêu cầu. Vui lòng thử lại sau.');
+    if (!error.status || error.status >= 500) throw unavailable();
     throw unauthorized();
   }
   return data;
@@ -48,6 +52,9 @@ export function supabaseServices({url, publishableKey, secretKey, emailRedirect}
           email, password, options: emailRedirect ? {emailRedirectTo: emailRedirect} : {},
         });
         if (result.error?.code === 'user_already_exists' || result.error?.code === 'email_exists') return;
+        if (result.error?.code === 'weak_password') {
+          throw new ApiError(400, 'WEAK_PASSWORD', 'Mật khẩu chưa đáp ứng yêu cầu bảo mật.');
+        }
         authResult(result);
       },
       async login(email, password) {
@@ -69,6 +76,37 @@ export function supabaseServices({url, publishableKey, secretKey, emailRedirect}
       },
       async logout(token) {
         authResult(await server.auth.admin.signOut(token, 'local'));
+      },
+      async changePassword(token, user, current, password) {
+        if (!user.email) throw unauthorized();
+        // Supabase only checks current_password itself if that project setting is enabled.
+        const check = await authClient().auth.signInWithPassword({email: user.email, password: current});
+        if (check.error?.code === 'invalid_credentials') {
+          throw new ApiError(400, 'PASSWORD_REJECTED', 'Mật khẩu hiện tại không đúng.');
+        }
+        const verified = tokens(authResult(check).session);
+        authResult(await server.auth.admin.signOut(verified.access_token, 'local'));
+        if (verified.user.id !== user.id) throw unauthorized();
+        // GoTrue's user endpoint accepts the access token without importing or rotating the refresh token.
+        const response = await fetch(`${issuer}/user`, {
+          method: 'PUT',
+          headers: {apikey: publishableKey, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json'},
+          body: JSON.stringify({current_password: current, password}),
+          signal: AbortSignal.timeout(10_000),
+        }).catch(() => { throw unavailable(); });
+        if (response.ok) {
+          await response.body?.cancel();
+          return;
+        }
+        const error = await response.json().catch(() => ({}));
+        const code = error?.error_code ?? error?.code;
+        if (code === 'reauthentication_needed') {
+          throw new ApiError(403, 'REAUTHENTICATION_REQUIRED', 'Hãy đăng xuất, đăng nhập lại rồi đổi mật khẩu.');
+        }
+        if (response.status === 422 || response.status === 400 || code === 'invalid_credentials' || code === 'current_password_invalid') {
+          throw new ApiError(400, 'PASSWORD_REJECTED', 'Kiểm tra mật khẩu hiện tại và chọn mật khẩu mới đáp ứng yêu cầu bảo mật.');
+        }
+        authResult({error: {status: response.status}});
       },
     },
     documents: {

@@ -7,7 +7,7 @@ ScanPDF là ứng dụng Android viết bằng Flutter để chụp hoặc nhậ
 - Chụp hoặc nhập ảnh, cắt viền, chỉnh phối cảnh, xoay, áp dụng bộ lọc và đổi thứ tự trang.
 - Xuất tài liệu tối đa 50 trang ở khổ A4, Letter hoặc theo tỷ lệ ảnh. Tìm kiếm, đổi tên, xóa và chia sẻ PDF trên thiết bị.
 - Đăng ký bằng email và lưu PDF trực tuyến theo yêu cầu trên Android. API kiểm tra chủ sở hữu, kích thước, số trang và hạn mức lưu trữ.
-- Web dùng cho trải nghiệm cục bộ. OCR và đổi mật khẩu hiện là giao diện minh họa.
+- Tài khoản trực tuyến có thể đổi mật khẩu bằng mật khẩu hiện tại. Web dùng cho trải nghiệm cục bộ. OCR hiện là giao diện minh họa.
 
 ## Cấu trúc repository
 

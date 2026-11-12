@@ -37,6 +37,31 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  test('changes password through the authenticated API', () async {
+    var changed = false;
+    final session = OnlineSession(
+      ScanApi(
+        base,
+        client: MockClient((request) async {
+          if (request.url.path.endsWith('/login')) return tokens(a, 'access');
+          expect(request.method, 'POST');
+          expect(request.url.path, '/v1/auth/password');
+          expect(request.headers['authorization'], 'Bearer access');
+          expect(jsonDecode(request.body), {
+            'current_password': 'OldExample1!',
+            'new_password': 'NewExample2!',
+          });
+          changed = true;
+          return http.Response('', 204);
+        }),
+      ),
+    );
+    await session.login('a@example.com', 'test', remember: false);
+    await session.changePassword('OldExample1!', 'NewExample2!');
+    expect(changed, isTrue);
+    expect(session.owner, 'auth:$a');
+  });
+
   test('opens a remembered local library before contacting the API', () async {
     var requests = 0;
     final api = ScanApi(

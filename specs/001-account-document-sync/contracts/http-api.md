@@ -8,6 +8,7 @@ Base path `/v1`. Ngoại trừ tạo tài khoản, đăng nhập và làm mới 
 | POST /auth/login | JSON `email`, `password` | 200; `user.id`, `user.email`, `access_token`, `refresh_token`, `expires_at` |
 | POST /auth/refresh | JSON `refresh_token` | 200; trả lại cặp token và thời hạn mới |
 | GET /auth/me | Bearer của thiết bị hiện tại | 200; `user.id`, `user.email`, kiểm tra phiên |
+| POST /auth/password | Bearer, JSON `current_password` và `new_password` | 204 sau khi xác minh mật khẩu hiện tại và cập nhật qua Supabase Auth |
 | POST /auth/logout | Bearer của thiết bị hiện tại | 204 khi máy chủ xác nhận phiên này đã thu hồi; không thu hồi thiết bị khác |
 | GET /documents | Cursor tùy chọn | 200; tối đa 30 mục `ready` của tài khoản, mới nhất trước, kèm `next_cursor` |
 | POST /documents | `multipart/form-data`: `file`, `filename`; header `Content-Length` và `Idempotency-Key` là UUID | 201 lần đầu, 200 khi thử lại cùng payload; trả cùng metadata và ID |

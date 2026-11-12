@@ -95,7 +95,7 @@ Trong bản tích hợp, Flutter sinh `.dart_tool/`, `build/` và metadata plugi
 
 `main.dart` dựng màn hình khởi động, mở `ScanStore`, tạo `OnlineSession` nếu API được cấu hình hợp lệ và khôi phục phiên đã ghi nhớ. Ứng dụng chọn màn hình đăng nhập hoặc `HomeScreen` theo tài khoản hiện tại. Tài khoản thật dùng định danh cục bộ `auth:<UUID>` lấy từ Supabase. Thư viện mẫu có vùng dữ liệu riêng.
 
-`account.dart` xử lý đăng ký, đăng nhập, truy cập tài khoản mẫu, hồ sơ và biểu mẫu liên quan. `account_options.dart` hiển thị thống kê thư viện, cài đặt chất lượng quét và các trang thông tin. Tên, ảnh đại diện, số điện thoại và công ty của hồ sơ được lưu cục bộ. Màn hình đổi mật khẩu hiện chỉ kiểm tra biểu mẫu. [Điểm vào ứng dụng](ScanPDF-Source/frontend/lib/main.dart) · [Tài khoản](ScanPDF-Source/frontend/lib/account.dart) · [Tùy chọn](ScanPDF-Source/frontend/lib/account_options.dart)
+`account.dart` xử lý đăng ký, đăng nhập, đổi mật khẩu, truy cập tài khoản mẫu và chỉnh hồ sơ. `account_options.dart` hiển thị thống kê thư viện, cài đặt chất lượng quét và các trang thông tin. Tên, ảnh đại diện, số điện thoại và công ty của hồ sơ được lưu cục bộ. [Điểm vào ứng dụng](ScanPDF-Source/frontend/lib/main.dart) · [Tài khoản](ScanPDF-Source/frontend/lib/account.dart) · [Tùy chọn](ScanPDF-Source/frontend/lib/account_options.dart)
 
 ### 3.2. Từ ảnh đến PDF
 
@@ -183,7 +183,8 @@ API dùng chung giới hạn 120 lượt/phút theo tài khoản cho các route 
 | Hồ sơ, mặc định chất lượng, dung lượng | Triển khai cục bộ theo tài khoản hoặc hồ sơ mẫu. |
 | Đăng ký, đăng nhập, thu hồi phiên thiết bị | Có trong bản tích hợp Android với API và Supabase đã cấu hình. |
 | Lưu, xem và xóa PDF trực tuyến | Có khi người dùng chủ động upload. Thư viện trực tuyến hỗ trợ tải, xem và xóa. |
-| Đổi mật khẩu và OCR | Có giao diện minh họa. OCR thực tế và cập nhật mật khẩu chưa triển khai qua API hiện tại. |
+| Đổi mật khẩu | Tài khoản trực tuyến dùng mật khẩu hiện tại để cập nhật qua Supabase Auth. Tài khoản mẫu có biểu mẫu minh họa. |
+| OCR và quên mật khẩu | OCR có giao diện minh họa. Khôi phục mật khẩu qua email chưa được triển khai. |
 | Thiết kế Stitch | Có 19 khung đối chiếu và màn hình xem thử. Các màn hình mẫu có thể dùng kho dữ liệu trong bộ nhớ. |
 
 Xem [README của bản tích hợp](ScanPDF-Source/README.md) khi cấu hình tài khoản và Supabase, [README Flutter](ScanPDF-Source/frontend/README.md) để chạy và ký Android, và [đối chiếu Stitch](ScanPDF-Source/frontend/STITCH-REVIEW.md) để kiểm tra các màn hình mẫu.

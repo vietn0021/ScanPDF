@@ -61,6 +61,10 @@ flutter run --dart-define-from-file=.env
 
 Đăng ký, xác nhận email và đăng nhập. Xuất một PDF rồi chọn **Lưu trực tuyến** ở màn hình kết quả. Mở **Thư viện → Thư viện trực tuyến** để tải và xem tệp. PDF tải từ thư viện trực tuyến dùng vùng tạm riêng của ứng dụng trong lúc xem.
 
+Khi triển khai, thêm `https://<service>.onrender.com/auth/confirmed` vào **Authentication → URL Configuration → Redirect URLs** trong Supabase và đặt cùng URL cho `SUPABASE_EMAIL_REDIRECT_URL` trên Render. Trang này hướng dẫn người dùng quay lại ScanPDF sau khi mở liên kết xác nhận. Nếu dùng email template tùy chỉnh, giữ liên kết xác nhận của Supabase và cấu hình để nó dùng URL chuyển hướng.
+
+Người dùng đã đăng nhập có thể đổi mật khẩu từ mục **Tài khoản**. API gửi mật khẩu hiện tại và mật khẩu mới qua kết nối HTTPS tới Supabase Auth. Nếu Supabase yêu cầu xác thực lại do phiên đã cũ, đăng xuất và đăng nhập lại trước khi đổi.
+
 ## Triển khai Render
 
 Tạo một Web Service dùng Node từ repository này.
