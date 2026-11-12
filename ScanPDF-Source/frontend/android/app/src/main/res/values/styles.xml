@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="scan_startup_background">#FCF9F8</color>
+    <style name="LaunchTheme" parent="NormalTheme">
+        <item name="android:windowBackground">@drawable/scanpdf_launch_background</item>
+    </style>
+    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@color/scan_startup_background</item>
+    </style>
+</resources>

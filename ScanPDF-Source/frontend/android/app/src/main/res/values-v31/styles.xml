@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="LaunchTheme" parent="NormalTheme">
+        <item name="android:windowSplashScreenBackground">@color/scan_startup_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/scanpdf_splash_icon</item>
+    </style>
+</resources>

@@ -1,0 +1,6 @@
+**/.env
+**/node_modules/
+**/build/
+**/.dart_tool/
+**/local.properties
+**/.temp/

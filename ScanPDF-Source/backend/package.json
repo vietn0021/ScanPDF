@@ -1,0 +1,23 @@
+{
+  "name": "scanpdf-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=24"},
+  "scripts": {
+    "start": "node --env-file=.env src/server.js",
+    "dev": "node --watch --env-file=.env src/server.js",
+    "setup": "node --env-file=.env scripts/setup.js",
+    "start:setup": "npm run setup && npm start",
+    "test": "node --test test/api.test.js",
+    "test:integration": "node --env-file=.env --test test/supabase.test.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2",
+    "express": "^5",
+    "express-rate-limit": "^8",
+    "multer": "^2.5.0",
+    "pdf-lib": "^1.17.1",
+    "pg": "^8"
+  }
+}
